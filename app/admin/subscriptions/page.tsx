@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { createBrowserClient } from "@supabase/ssr"
+import { useEffect, useState, useCallback } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { AdminNavigation } from "@/components/admin/admin-navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Search, DollarSign, RefreshCw, Download } from "lucide-react"
 import { SubscriptionBreakdown } from "@/components/admin/charts/subscription-breakdown"
 
+// Type for subscription records
 interface Subscription {
   id: string
   user_id: string
@@ -30,17 +31,10 @@ export default function SubscriptionsManagement() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [planFilter, setPlanFilter] = useState<string>("all")
+  const supabase = createClient()
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  )
-
-  useEffect(() => {
-    fetchSubscriptions()
-  }, [planFilter])
-
-  const fetchSubscriptions = async () => {
+  // Memoized fetch function for real-time updates
+  const fetchSubscriptions = useCallback(async () => {
     try {
       setLoading(true)
       let query = supabase.from("subscriptions").select("*").order("created_at", { ascending: false })
@@ -57,8 +51,39 @@ export default function SubscriptionsManagement() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, planFilter])
 
+  useEffect(() => {
+    fetchSubscriptions()
+
+    // Set up real-time subscription for subscriptions table
+    const channel = supabase
+      .channel("admin_subscriptions_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "subscriptions" },
+        (payload) => {
+          // Handle real-time updates
+          if (payload.eventType === "INSERT") {
+            setSubscriptions((prev) => [payload.new as Subscription, ...prev])
+          } else if (payload.eventType === "UPDATE") {
+            setSubscriptions((prev) =>
+              prev.map((sub) => (sub.id === payload.new.id ? (payload.new as Subscription) : sub))
+            )
+          } else if (payload.eventType === "DELETE") {
+            setSubscriptions((prev) => prev.filter((sub) => sub.id !== payload.old.id))
+          }
+        }
+      )
+      .subscribe()
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [fetchSubscriptions, supabase])
+
+  // Calculate stats from current subscriptions data
   const stats = {
     total: subscriptions.length,
     free: subscriptions.filter((s) => s.plan === "free").length,

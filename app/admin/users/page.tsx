@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { createBrowserClient } from "@supabase/ssr"
+import { useEffect, useState, useCallback } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { AdminNavigation } from "@/components/admin/admin-navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -39,6 +39,7 @@ import {
   RefreshCw,
 } from "lucide-react"
 
+// Type for user records (enriched from subscriptions)
 interface User {
   id: string
   user_id: string
@@ -61,17 +62,10 @@ export default function UsersManagement() {
   const [totalUsers, setTotalUsers] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const usersPerPage = 20
+  const supabase = createClient()
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  )
-
-  useEffect(() => {
-    fetchUsers()
-  }, [planFilter, statusFilter, currentPage])
-
-  const fetchUsers = async () => {
+  // Memoized fetch function for real-time updates
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true)
       let query = supabase
@@ -107,8 +101,32 @@ export default function UsersManagement() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, planFilter, statusFilter, currentPage])
 
+  // Set up real-time subscription for users
+  useEffect(() => {
+    fetchUsers()
+
+    // Set up real-time subscription for subscriptions table (which stores users)
+    const channel = supabase
+      .channel("admin_users_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "subscriptions" },
+        () => {
+          // Refetch users when subscriptions change
+          fetchUsers()
+        }
+      )
+      .subscribe()
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [fetchUsers, supabase])
+
+  // Filter users based on search query (client-side)
   const filteredUsers = users.filter((user) => {
     if (!searchQuery) return true
     const query = searchQuery.toLowerCase()

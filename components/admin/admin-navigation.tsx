@@ -40,6 +40,7 @@ export function AdminNavigation() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
   )
 
+  // Navigation items for admin dashboard - Payments uses BarChart3 for revenue focus
   const navItems = [
     { href: "/admin", label: "Overview", icon: LayoutDashboard },
     { href: "/admin/users", label: "Users", icon: Users },

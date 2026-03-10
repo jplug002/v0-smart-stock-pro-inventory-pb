@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -66,11 +66,8 @@ export default function AdminDashboardContent() {
 
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchDashboardStats()
-  }, [])
-
-  const fetchDashboardStats = async () => {
+  // Memoized fetch function for real-time updates
+  const fetchDashboardStats = useCallback(async () => {
     try {
       setRefreshing(true)
 
@@ -174,7 +171,37 @@ export default function AdminDashboardContent() {
       setRefreshing(false)
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  // Set up real-time subscriptions for dashboard data
+  useEffect(() => {
+    fetchDashboardStats()
+
+    // Set up real-time subscriptions for key tables
+    const subscriptionsChannel = supabase
+      .channel("dashboard_subscriptions_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "subscriptions" },
+        () => fetchDashboardStats()
+      )
+      .subscribe()
+
+    const transactionsChannel = supabase
+      .channel("dashboard_transactions_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "paystack_transactions" },
+        () => fetchDashboardStats()
+      )
+      .subscribe()
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      supabase.removeChannel(subscriptionsChannel)
+      supabase.removeChannel(transactionsChannel)
+    }
+  }, [fetchDashboardStats, supabase])
 
   if (loading) {
     return (
