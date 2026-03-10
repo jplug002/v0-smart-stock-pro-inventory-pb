@@ -156,7 +156,8 @@ function CheckoutContent() {
             })
           }
 
-          router.push("/billing?success=true")
+          // Redirect to dashboard with success
+          router.push("/dashboard?subscription=success")
         },
         onClose: () => {
           setLoading(false)

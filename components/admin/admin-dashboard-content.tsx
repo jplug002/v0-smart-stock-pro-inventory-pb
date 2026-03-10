@@ -28,6 +28,9 @@ import { RevenueChart } from "@/components/admin/charts/revenue-chart"
 import { RecentActivityFeed } from "@/components/admin/recent-activity-feed"
 import { QuickActions } from "@/components/admin/quick-actions"
 import { TopUsersTable } from "@/components/admin/top-users-table"
+import { EmailBroadcaster } from "@/components/admin/email-broadcaster"
+import { SubscribedUsersTable } from "@/components/admin/subscribed-users-table"
+import { ActivityLogsViewer } from "@/components/admin/activity-logs-viewer"
 
 interface DashboardStats {
   totalUsers: number
@@ -331,6 +334,9 @@ export default function AdminDashboardContent() {
             <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
             <TabsTrigger value="activity">Recent Activity</TabsTrigger>
             <TabsTrigger value="users">Top Users</TabsTrigger>
+            <TabsTrigger value="broadcaster">Email Broadcast</TabsTrigger>
+            <TabsTrigger value="subscribed">Subscribed Users</TabsTrigger>
+            <TabsTrigger value="logs">Activity Logs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="growth">
@@ -379,6 +385,35 @@ export default function AdminDashboardContent() {
                 <TopUsersTable />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="broadcaster">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <EmailBroadcaster />
+              </div>
+              <div className="space-y-6">
+                <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Email Broadcast Guide</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-xs text-gray-600 dark:text-gray-400 space-y-2">
+                    <p>• Send important announcements to all subscribed users</p>
+                    <p>• Use clear, professional language</p>
+                    <p>• Include relevant links and resources</p>
+                    <p>• Emails are logged for audit purposes</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="subscribed">
+            <SubscribedUsersTable />
+          </TabsContent>
+
+          <TabsContent value="logs">
+            <ActivityLogsViewer />
           </TabsContent>
         </Tabs>
       </div>

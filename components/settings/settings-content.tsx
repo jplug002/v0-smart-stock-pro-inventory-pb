@@ -13,6 +13,7 @@ import BusinessInfo from "./business-info"
 import BusinessPinManagement from "./business-pin-management" // Add BusinessPinManagement import
 import SubscriptionBilling from "./subscription-billing"
 import SupportHelp from "./support-help"
+import { SocialAndLearning } from "./social-and-learning" // Import new social and learning component
 
 export default function SettingsContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -93,7 +94,7 @@ export default function SettingsContent() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full bg-card border-b border-border rounded-none p-0 h-auto overflow-x-auto flex justify-start md:justify-start md:grid md:grid-cols-3 lg:grid-cols-5 mb-6">
+          <TabsList className="w-full bg-card border-b border-border rounded-none p-0 h-auto overflow-x-auto flex justify-start md:justify-start md:grid md:grid-cols-4 lg:grid-cols-6 mb-6">
             <TabsTrigger
               value="account"
               className="text-xs sm:text-sm px-3 sm:px-4 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground flex-shrink-0 md:flex-shrink"
@@ -111,6 +112,12 @@ export default function SettingsContent() {
               className="text-xs sm:text-sm px-3 sm:px-4 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground flex-shrink-0 md:flex-shrink"
             >
               Business
+            </TabsTrigger>
+            <TabsTrigger
+              value="social"
+              className="text-xs sm:text-sm px-3 sm:px-4 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground flex-shrink-0 md:flex-shrink"
+            >
+              Social
             </TabsTrigger>
             <TabsTrigger
               value="billing"
@@ -139,6 +146,10 @@ export default function SettingsContent() {
               <BusinessInfo />
               <BusinessPinManagement />
             </div>
+          </TabsContent>
+
+          <TabsContent value="social">
+            <SocialAndLearning />
           </TabsContent>
 
           <TabsContent value="billing">
