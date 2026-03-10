@@ -107,6 +107,39 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
         throw new Error("Not authenticated")
       }
 
+      // If creating a new product, check plan limit
+      if (!product) {
+        // Get user's subscription plan
+        const { data: subscription } = await supabase
+          .from("subscriptions")
+          .select("plan")
+          .eq("user_id", user.id)
+          .single()
+
+        const plan = subscription?.plan || "free"
+
+        // Get plan limits
+        const { data: limits } = await supabase
+          .from("plan_limits")
+          .select("max_products")
+          .eq("plan", plan)
+          .single()
+
+        const maxProducts = limits?.max_products || 50
+
+        // Check current product count
+        const { count: productCount } = await supabase
+          .from("products")
+          .select("*", { count: "exact" })
+          .eq("user_id", user.id)
+
+        if ((productCount || 0) >= maxProducts) {
+          throw new Error(
+            `You've reached the limit of ${maxProducts} products on your ${plan} plan. Upgrade your plan to add more products.`
+          )
+        }
+      }
+
       const currentBusinessId = localStorage.getItem("currentBusinessId")
 
       if (product) {

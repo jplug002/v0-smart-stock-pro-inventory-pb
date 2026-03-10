@@ -163,6 +163,31 @@ export default function OnboardingPage() {
         return
       }
 
+      // CHECK PLAN LIMIT: Check if user is on free plan and already has a business
+      const { data: subscription } = await supabase
+        .from("subscriptions")
+        .select("plan")
+        .eq("user_id", user.id)
+        .single()
+
+      const plan = subscription?.plan || "free"
+
+      if (plan === "free") {
+        // Free plan: limit to 1 business
+        const { count: businessCount } = await supabase
+          .from("businesses")
+          .select("*", { count: "exact" })
+          .eq("user_id", user.id)
+
+        if ((businessCount || 0) >= 1) {
+          setError(
+            "You've reached the limit of 1 business on the Free plan. Upgrade to Pro to create more businesses."
+          )
+          setCreating(false)
+          return
+        }
+      }
+
       // Build insert data
       const insertData: any = {
         user_id: user.id,
